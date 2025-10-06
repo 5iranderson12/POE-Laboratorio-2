@@ -1,0 +1,57 @@
+erDiagram
+    CLIENTES ||--o{ VENTAS : "realiza"
+    EMPLEADOS ||--o{ VENTAS : "atiende"
+    VENTAS ||--|{ DETALLEVENTA : "contiene"
+    PRODUCTOS ||--o{ DETALLEVENTA : "incluye"
+
+    CLIENTES {
+        int cliente_id PK
+        varchar nombre
+        varchar apellido
+        varchar telefono
+        varchar email UK
+        varchar direccion
+        date fecha_registro
+    }
+
+    EMPLEADOS {
+        int empleado_id PK
+        varchar nombre
+        varchar apellido
+        varchar telefono
+        varchar email UK
+        varchar puesto
+        date fecha_contratacion
+        decimal salario
+        boolean activo
+    }
+
+    PRODUCTOS {
+        int producto_id PK
+        varchar nombre_producto
+        text descripcion
+        varchar categoria
+        varchar marca
+        decimal precio_unitario
+        int stock_disponible
+        date fecha_ingreso
+    }
+
+    VENTAS {
+        int venta_id PK
+        datetime fecha_venta
+        int cliente_id FK
+        int empleado_id FK
+        decimal total_venta
+        varchar metodo_pago
+        varchar estado_venta
+    }
+
+    DETALLEVENTA {
+        int detalle_id PK
+        int venta_id FK
+        int producto_id FK
+        int cantidad
+        decimal precio_unitario
+        decimal subtotal
+    }
