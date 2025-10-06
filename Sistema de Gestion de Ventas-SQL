@@ -1,0 +1,188 @@
+-- =====================================================
+-- LABORATORIO 2: SISTEMA DE GESTIÓN DE VENTAS
+-- Base de datos para tienda de productos electrónicos
+-- =====================================================
+
+-- Crear la base de datos
+CREATE DATABASE IF NOT EXISTS SistemaVentas;
+USE SistemaVentas;
+
+-- =====================================================
+-- TABLA 1: CLIENTES
+-- Almacena información de los clientes que compran
+-- =====================================================
+CREATE TABLE Clientes (
+    cliente_id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    telefono VARCHAR(15),
+    email VARCHAR(100) UNIQUE,
+    direccion VARCHAR(200),
+    fecha_registro DATE NOT NULL DEFAULT (CURRENT_DATE),
+    CONSTRAINT chk_email CHECK (email LIKE '%@%.%')
+);
+
+-- =====================================================
+-- TABLA 2: EMPLEADOS
+-- Registra trabajadores que realizan las ventas
+-- =====================================================
+CREATE TABLE Empleados (
+    empleado_id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    telefono VARCHAR(15),
+    email VARCHAR(100) UNIQUE,
+    puesto VARCHAR(50) NOT NULL,
+    fecha_contratacion DATE NOT NULL,
+    salario DECIMAL(10, 2) CHECK (salario > 0),
+    activo BOOLEAN DEFAULT TRUE
+);
+
+-- =====================================================
+-- TABLA 3: PRODUCTOS
+-- Contiene productos electrónicos disponibles
+-- =====================================================
+CREATE TABLE Productos (
+    producto_id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_producto VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    categoria VARCHAR(50) NOT NULL,
+    marca VARCHAR(50),
+    precio_unitario DECIMAL(10, 2) NOT NULL CHECK (precio_unitario > 0),
+    stock_disponible INT NOT NULL DEFAULT 0 CHECK (stock_disponible >= 0),
+    fecha_ingreso DATE NOT NULL DEFAULT (CURRENT_DATE)
+);
+
+-- =====================================================
+-- TABLA 4: VENTAS
+-- Información general de cada venta realizada
+-- =====================================================
+CREATE TABLE Ventas (
+    venta_id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha_venta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    cliente_id INT NOT NULL,
+    empleado_id INT NOT NULL,
+    total_venta DECIMAL(10, 2) NOT NULL CHECK (total_venta >= 0),
+    metodo_pago VARCHAR(30) NOT NULL,
+    estado_venta VARCHAR(20) DEFAULT 'Completada',
+    
+    -- Llaves foráneas
+    CONSTRAINT fk_venta_cliente 
+        FOREIGN KEY (cliente_id) REFERENCES Clientes(cliente_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    
+    CONSTRAINT fk_venta_empleado 
+        FOREIGN KEY (empleado_id) REFERENCES Empleados(empleado_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- =====================================================
+-- TABLA 5: DETALLEVENTA
+-- Productos vendidos en cada venta con cantidad y precio
+-- =====================================================
+CREATE TABLE DetalleVenta (
+    detalle_id INT AUTO_INCREMENT PRIMARY KEY,
+    venta_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10, 2) NOT NULL CHECK (precio_unitario > 0),
+    subtotal DECIMAL(10, 2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    
+    -- Llaves foráneas
+    CONSTRAINT fk_detalle_venta 
+        FOREIGN KEY (venta_id) REFERENCES Ventas(venta_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    
+    CONSTRAINT fk_detalle_producto 
+        FOREIGN KEY (producto_id) REFERENCES Productos(producto_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- =====================================================
+-- ÍNDICES PARA MEJORAR RENDIMIENTO
+-- =====================================================
+CREATE INDEX idx_cliente_nombre ON Clientes(nombre, apellido);
+CREATE INDEX idx_empleado_nombre ON Empleados(nombre, apellido);
+CREATE INDEX idx_producto_nombre ON Productos(nombre_producto);
+CREATE INDEX idx_venta_fecha ON Ventas(fecha_venta);
+CREATE INDEX idx_detalle_venta ON DetalleVenta(venta_id);
+
+-- =====================================================
+-- DATOS DE EJEMPLO PARA PRUEBAS
+-- =====================================================
+
+-- Insertar clientes
+INSERT INTO Clientes (nombre, apellido, telefono, email, direccion) VALUES
+('Juan', 'Pérez', '7890-1234', 'juan.perez@email.com', 'Col. Centro, San Salvador'),
+('María', 'González', '7890-5678', 'maria.gonzalez@email.com', 'Col. Escalón, San Salvador'),
+('Carlos', 'Rodríguez', '7890-9012', 'carlos.rodriguez@email.com', 'Santa Tecla, La Libertad');
+
+-- Insertar empleados
+INSERT INTO Empleados (nombre, apellido, telefono, email, puesto, fecha_contratacion, salario) VALUES
+('Ana', 'Martínez', '7123-4567', 'ana.martinez@tienda.com', 'Vendedora', '2024-01-15', 600.00),
+('Luis', 'Hernández', '7123-8901', 'luis.hernandez@tienda.com', 'Vendedor', '2024-03-20', 600.00),
+('Patricia', 'López', '7123-2345', 'patricia.lopez@tienda.com', 'Supervisora', '2023-06-10', 800.00);
+
+-- Insertar productos
+INSERT INTO Productos (nombre_producto, descripcion, categoria, marca, precio_unitario, stock_disponible) VALUES
+('Laptop HP 15-dy2795', 'Laptop 15.6" Intel Core i5, 8GB RAM, 256GB SSD', 'Computadoras', 'HP', 599.99, 10),
+('Mouse Inalámbrico', 'Mouse óptico inalámbrico 2.4GHz', 'Accesorios', 'Logitech', 25.50, 50),
+('Teclado Mecánico', 'Teclado mecánico RGB retroiluminado', 'Accesorios', 'Razer', 89.99, 20),
+('Monitor Samsung 24"', 'Monitor LED Full HD 24 pulgadas', 'Monitores', 'Samsung', 179.99, 15),
+('Auriculares Bluetooth', 'Auriculares inalámbricos con cancelación de ruido', 'Audio', 'Sony', 149.99, 25);
+
+-- Insertar ventas
+INSERT INTO Ventas (fecha_venta, cliente_id, empleado_id, total_venta, metodo_pago) VALUES
+('2025-10-01 10:30:00', 1, 1, 625.49, 'Tarjeta de Crédito'),
+('2025-10-02 14:15:00', 2, 2, 269.98, 'Efectivo'),
+('2025-10-03 16:45:00', 3, 1, 779.98, 'Transferencia');
+
+-- Insertar detalles de venta
+INSERT INTO DetalleVenta (venta_id, producto_id, cantidad, precio_unitario) VALUES
+-- Venta 1
+(1, 1, 1, 599.99),
+(1, 2, 1, 25.50),
+-- Venta 2
+(2, 3, 2, 89.99),
+(2, 4, 1, 179.99),
+-- Venta 3
+(3, 1, 1, 599.99),
+(3, 5, 1, 149.99),
+(3, 2, 1, 25.50);
+
+-- =====================================================
+-- CONSULTAS ÚTILES PARA VERIFICAR LA BASE DE DATOS
+-- =====================================================
+
+-- Ver todas las ventas con información del cliente y empleado
+SELECT 
+    v.venta_id,
+    v.fecha_venta,
+    CONCAT(c.nombre, ' ', c.apellido) AS cliente,
+    CONCAT(e.nombre, ' ', e.apellido) AS empleado,
+    v.total_venta,
+    v.metodo_pago
+FROM Ventas v
+INNER JOIN Clientes c ON v.cliente_id = c.cliente_id
+INNER JOIN Empleados e ON v.empleado_id = e.empleado_id;
+
+-- Ver detalle completo de una venta específica
+SELECT 
+    dv.venta_id,
+    p.nombre_producto,
+    dv.cantidad,
+    dv.precio_unitario,
+    dv.subtotal
+FROM DetalleVenta dv
+INNER JOIN Productos p ON dv.producto_id = p.producto_id
+WHERE dv.venta_id = 1;
+
+-- Ver productos más vendidos
+SELECT 
+    p.nombre_producto,
+    SUM(dv.cantidad) AS total_vendido,
+    SUM(dv.subtotal) AS ingresos_generados
+FROM DetalleVenta dv
+INNER JOIN Productos p ON dv.producto_id = p.producto_id
+GROUP BY p.producto_id, p.nombre_producto
+ORDER BY total_vendido DESC;
